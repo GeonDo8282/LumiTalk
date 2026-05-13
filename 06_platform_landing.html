@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KanaSpace — AI 플랫폼</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07070B;--bg2:#0F0F16;--bg3:#161620;
+  --border:#21212E;--text:#EEEDF5;--muted:#6E6D80;
+  --p:#8B5CF6;--p2:#6D28D9;--c:#22D3EE;--g:#10B981;--a:#F59E0B;--pk:#EC4899;--r:#EF4444;
+  --font-d:'Syne',sans-serif;--font:'Noto Sans KR',sans-serif;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--font);overflow-x:hidden}
+
+/* ── NAV ─────────────────────────────────────────────────────────────────── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:0 2rem;height:64px;display:flex;align-items:center;gap:2rem;background:rgba(7,7,11,0.85);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,0.05)}
+.nav-logo{font-family:var(--font-d);font-size:22px;font-weight:800;background:linear-gradient(135deg,var(--p),var(--c));-webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap}
+.nav-links{display:flex;gap:1.5rem;list-style:none;margin-left:auto}
+.nav-links a{font-size:13px;color:var(--muted);text-decoration:none;transition:color 0.2s;font-weight:500}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{padding:8px 18px;background:var(--p);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);white-space:nowrap}
+
+/* ── HERO ────────────────────────────────────────────────────────────────── */
+.hero{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;position:relative;overflow:hidden;padding:80px 2rem 4rem}
+.hero-bg{position:absolute;inset:0;pointer-events:none}
+.orb{position:absolute;border-radius:50%;filter:blur(100px);opacity:0.18}
+.o1{width:500px;height:500px;background:var(--p);top:-150px;left:-150px}
+.o2{width:400px;height:400px;background:var(--c);bottom:-100px;right:-100px}
+.o3{width:300px;height:300px;background:var(--pk);top:30%;left:40%}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;background:rgba(139,92,246,0.12);border:1px solid rgba(139,92,246,0.3);border-radius:20px;font-size:12px;color:var(--p);margin-bottom:1.5rem;font-weight:500}
+.hero h1{font-family:var(--font-d);font-size:clamp(40px,6vw,72px);font-weight:800;line-height:1.1;letter-spacing:-2px;margin-bottom:1.5rem}
+.hero h1 span{background:linear-gradient(135deg,var(--p),var(--c));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{font-size:18px;color:var(--muted);max-width:560px;margin:0 auto 2.5rem;line-height:1.7;font-weight:300}
+.hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.btn-primary{padding:14px 28px;background:linear-gradient(135deg,var(--p),var(--p2));border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font);transition:all 0.2s}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(139,92,246,0.4)}
+.btn-outline{padding:14px 28px;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:15px;font-weight:500;cursor:pointer;font-family:var(--font);transition:all 0.2s}
+.btn-outline:hover{border-color:var(--p);color:var(--p)}
+.hero-stats{display:flex;gap:2rem;justify-content:center;margin-top:4rem;flex-wrap:wrap}
+.stat{text-align:center}
+.stat-n{font-family:var(--font-d);font-size:32px;font-weight:800;background:linear-gradient(135deg,var(--p),var(--c));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-l{font-size:12px;color:var(--muted);margin-top:2px}
+
+/* ── SECTION ─────────────────────────────────────────────────────────────── */
+section{padding:6rem 2rem;max-width:1100px;margin:0 auto}
+.section-tag{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--p);margin-bottom:12px}
+.section-title{font-family:var(--font-d);font-size:clamp(28px,4vw,44px);font-weight:800;line-height:1.15;letter-spacing:-1px;margin-bottom:1rem}
+.section-sub{font-size:16px;color:var(--muted);max-width:520px;line-height:1.7}
+
+/* ── FEATURES ─────────────────────────────────────────────────────────────── */
+#features{padding-top:0}
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-top:3rem}
+.feat-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:1.75rem;position:relative;overflow:hidden;transition:all 0.25s;cursor:pointer}
+.feat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--card-color)}
+.feat-card:hover{border-color:var(--card-color-dim);transform:translateY(-3px)}
+.feat-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:1rem;background:var(--card-color-bg)}
+.feat-title{font-family:var(--font-d);font-size:17px;font-weight:700;margin-bottom:8px}
+.feat-desc{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:1rem}
+.feat-tags{display:flex;flex-wrap:wrap;gap:5px}
+.f-tag{font-size:10px;padding:3px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--muted)}
+.feat-link{display:inline-flex;align-items:center;gap:4px;margin-top:12px;font-size:12px;font-weight:600;text-decoration:none;transition:gap 0.2s}
+.feat-link:hover{gap:8px}
+
+/* ── HOW IT WORKS ─────────────────────────────────────────────────────────── */
+#how{background:var(--bg2);padding:6rem 2rem;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.how-inner{max-width:1100px;margin:0 auto}
+.steps-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-top:3rem}
+.step{position:relative;padding:1.5rem;background:var(--bg3);border-radius:14px;border:1px solid var(--border)}
+.step-num{font-family:var(--font-d);font-size:40px;font-weight:800;color:var(--border);position:absolute;top:1rem;right:1rem}
+.step-icon{font-size:24px;margin-bottom:12px}
+.step-title{font-weight:700;font-size:15px;margin-bottom:6px}
+.step-desc{font-size:12px;color:var(--muted);line-height:1.6}
+
+/* ── STACK ────────────────────────────────────────────────────────────────── */
+.stack-logos{display:flex;flex-wrap:wrap;gap:10px;margin-top:2rem}
+.stack-logo{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;font-size:13px;font-weight:500;color:var(--muted)}
+.stack-dot{width:8px;height:8px;border-radius:50%}
+
+/* ── CTA ──────────────────────────────────────────────────────────────────── */
+.cta-section{background:linear-gradient(135deg,rgba(139,92,246,0.12),rgba(34,211,238,0.08));border:1px solid rgba(139,92,246,0.2);border-radius:24px;padding:4rem;text-align:center;margin:0 2rem 4rem;max-width:1100px;margin-left:auto;margin-right:auto}
+.cta-section h2{font-family:var(--font-d);font-size:clamp(28px,4vw,40px);font-weight:800;margin-bottom:12px}
+.cta-section p{color:var(--muted);font-size:15px;margin-bottom:2rem;max-width:480px;margin-left:auto;margin-right:auto}
+
+/* ── FOOTER ───────────────────────────────────────────────────────────────── */
+footer{border-top:1px solid var(--border);padding:2rem;text-align:center;color:var(--muted);font-size:13px}
+
+/* ── DEMO MODAL ───────────────────────────────────────────────────────────── */
+.demo-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:200;display:none;align-items:center;justify-content:center;padding:1rem}
+.demo-overlay.show{display:flex}
+.demo-box{background:var(--bg2);border:1px solid var(--border);border-radius:20px;width:100%;max-width:520px;overflow:hidden}
+.demo-header{padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.demo-title{font-family:var(--font-d);font-size:17px;font-weight:700}
+.demo-close{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer}
+.demo-body{padding:1.5rem}
+.demo-input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;margin-bottom:10px;resize:none}
+.demo-input:focus{border-color:var(--p)}
+.key-input-demo{font-family:monospace;font-size:12px}
+.demo-btn{width:100%;padding:12px;background:var(--p);border:none;border-radius:10px;color:#fff;font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;transition:opacity 0.2s}
+.demo-btn:hover{opacity:0.9}
+.demo-btn:disabled{opacity:0.5;cursor:not-allowed}
+.demo-result{background:var(--bg3);border-radius:10px;padding:12px;font-size:13px;line-height:1.7;margin-top:10px;display:none;white-space:pre-wrap;color:var(--text)}
+.demo-result.show{display:block}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">KanaSpace</div>
+  <ul class="nav-links">
+    <li><a href="#features">기능</a></li>
+    <li><a href="#how">작동 방식</a></li>
+    <li><a href="#stack">기술 스택</a></li>
+  </ul>
+  <button class="nav-cta" onclick="openDemo()">🎯 라이브 데모</button>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-bg">
+    <div class="orb o1"></div>
+    <div class="orb o2"></div>
+    <div class="orb o3"></div>
+  </div>
+  <div style="position:relative;z-index:1">
+    <div class="hero-badge">✦ Kanana API Beta — AI 플랫폼</div>
+    <h1>감정을 이해하는<br><span>AI 플랫폼</span></h1>
+    <p>감정 분석, 맞춤 추천, 커뮤니티 보조까지 — 하나의 플랫폼에서 AI의 모든 가능성을 경험하세요</p>
+    <div class="hero-btns">
+      <button class="btn-primary" onclick="openDemo()">🚀 지금 체험하기</button>
+      <button class="btn-outline" onclick="document.querySelector('#features').scrollIntoView({behavior:'smooth'})">기능 살펴보기 →</button>
+    </div>
+    <div class="hero-stats">
+      <div class="stat"><div class="stat-n">6</div><div class="stat-l">AI 기능 모듈</div></div>
+      <div class="stat"><div class="stat-n">5</div><div class="stat-l">기술 스택</div></div>
+      <div class="stat"><div class="stat-n">Beta</div><div class="stat-l">테스트 진행 중</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section id="features">
+  <div style="text-align:center;margin-bottom:1rem">
+    <div class="section-tag">6 AI 모듈</div>
+    <div class="section-title">플랫폼의 모든 기능</div>
+    <div class="section-sub" style="margin:0 auto">각 모듈은 독립적으로 작동하며 통합 플랫폼으로 연결됩니다</div>
+  </div>
+  <div class="features-grid">
+    <div class="feat-card" style="--card-color:#8B5CF6;--card-color-dim:#8B5CF6;--card-color-bg:rgba(139,92,246,0.1)">
+      <div class="feat-icon">🎵</div>
+      <div class="feat-title">감정 기반 음악 추천 AI</div>
+      <div class="feat-desc">감정 텍스트를 분석하여 현재 기분에 최적화된 음악을 추천합니다. 에너지·행복·우울 스펙트럼을 시각화합니다.</div>
+      <div class="feat-tags"><span class="f-tag">Emotion NLP</span><span class="f-tag">Music API</span><span class="f-tag">Firebase</span></div>
+      <a href="01_emotion_music_ai.html" class="feat-link" style="color:#8B5CF6">파일 열기 →</a>
+    </div>
+    <div class="feat-card" style="--card-color:#22D3EE;--card-color-dim:#22D3EE;--card-color-bg:rgba(34,211,238,0.1)">
+      <div class="feat-icon">👥</div>
+      <div class="feat-title">AI 커뮤니티 보조 시스템</div>
+      <div class="feat-desc">게시글을 자동으로 분류·요약·신고 감지합니다. FastAPI + Supabase 기반 실시간 처리.</div>
+      <div class="feat-tags"><span class="f-tag">FastAPI</span><span class="f-tag">Supabase</span><span class="f-tag">Moderation</span></div>
+      <a href="02_community_ai_backend.py" class="feat-link" style="color:#22D3EE">Python 파일 →</a>
+    </div>
+    <div class="feat-card" style="--card-color:#F59E0B;--card-color-dim:#F59E0B;--card-color-bg:rgba(245,158,11,0.1)">
+      <div class="feat-icon">🤖</div>
+      <div class="feat-title">Discord AI 자동화 봇</div>
+      <div class="feat-desc">Discord 서버에서 AI 응답, 메시지 요약, 번역, 감정 분석을 자동화합니다. Slash 커맨드 지원.</div>
+      <div class="feat-tags"><span class="f-tag">discord.py</span><span class="f-tag">Webhook</span><span class="f-tag">Auto</span></div>
+      <a href="03_discord_ai_bot.py" class="feat-link" style="color:#F59E0B">Python 파일 →</a>
+    </div>
+    <div class="feat-card" style="--card-color:#10B981;--card-color-dim:#10B981;--card-color-bg:rgba(16,185,129,0.1)">
+      <div class="feat-icon">👤</div>
+      <div class="feat-title">맞춤형 응답 시스템</div>
+      <div class="feat-desc">유저 프로필과 대화 히스토리 기반으로 완전히 개인화된 AI 응답을 생성합니다.</div>
+      <div class="feat-tags"><span class="f-tag">Personalization</span><span class="f-tag">Firebase</span><span class="f-tag">History</span></div>
+      <a href="04_personalized_chat.html" class="feat-link" style="color:#10B981">파일 열기 →</a>
+    </div>
+    <div class="feat-card" style="--card-color:#EF4444;--card-color-dim:#EF4444;--card-color-bg:rgba(239,68,68,0.1)">
+      <div class="feat-icon">✨</div>
+      <div class="feat-title">AI 콘텐츠 추천 엔진</div>
+      <div class="feat-desc">사용자 행동 패턴을 학습하여 맞춤 콘텐츠를 추천합니다. 콜드 스타트 처리 포함.</div>
+      <div class="feat-tags"><span class="f-tag">Supabase</span><span class="f-tag">FastAPI</span><span class="f-tag">ML</span></div>
+      <a href="05_content_recommender.py" class="feat-link" style="color:#EF4444">Python 파일 →</a>
+    </div>
+    <div class="feat-card" style="--card-color:#EC4899;--card-color-dim:#EC4899;--card-color-bg:rgba(236,72,153,0.1)">
+      <div class="feat-icon">🎨</div>
+      <div class="feat-title">통합 UI/UX 플랫폼</div>
+      <div class="feat-desc">모든 AI 기능을 하나로 연결하는 메인 플랫폼입니다. 다크모드, 반응형 디자인 완비.</div>
+      <div class="feat-tags"><span class="f-tag">HTML/CSS</span><span class="f-tag">Responsive</span><span class="f-tag">Dark</span></div>
+      <a href="#" class="feat-link" style="color:#EC4899">현재 페이지 ✓</a>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<div id="how">
+  <div class="how-inner">
+    <div style="text-align:center;margin-bottom:1rem">
+      <div class="section-tag">작동 방식</div>
+      <div class="section-title">어떻게 작동하나요?</div>
+    </div>
+    <div class="steps-grid">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-icon">📝</div>
+        <div class="step-title">입력</div>
+        <div class="step-desc">텍스트, 행동 데이터, 또는 Discord 이벤트를 입력합니다</div>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-icon">🧠</div>
+        <div class="step-title">AI 분석</div>
+        <div class="step-desc">Claude API가 감정, 의도, 패턴을 실시간으로 분석합니다</div>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div class="step-icon">⚡</div>
+        <div class="step-title">개인화</div>
+        <div class="step-desc">Firebase/Supabase에 저장된 히스토리로 응답을 개인화합니다</div>
+      </div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <div class="step-icon">✅</div>
+        <div class="step-title">결과 제공</div>
+        <div class="step-desc">음악 추천, 답변, 콘텐츠, Discord 응답 등 맞춤 결과를 전달합니다</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STACK -->
+<section id="stack">
+  <div class="section-tag">기술 스택</div>
+  <div class="section-title">사용 기술</div>
+  <div class="stack-logos">
+    <div class="stack-logo"><div class="stack-dot" style="background:#8B5CF6"></div>Claude API</div>
+    <div class="stack-logo"><div class="stack-dot" style="background:#F59E0B"></div>HTML / CSS / JavaScript</div>
+    <div class="stack-logo"><div class="stack-dot" style="background:#3B82F6"></div>Python + FastAPI</div>
+    <div class="stack-logo"><div class="stack-dot" style="background:#EF4444"></div>Firebase Firestore</div>
+    <div class="stack-logo"><div class="stack-dot" style="background:#10B981"></div>Supabase PostgreSQL</div>
+    <div class="stack-logo"><div class="stack-dot" style="background:#7C3AED"></div>discord.py</div>
+  </div>
+</section>
+
+<!-- CTA -->
+<div class="cta-section">
+  <h2>지금 바로 시작하세요</h2>
+  <p>Claude API 키만 있으면 모든 기능을 바로 테스트할 수 있습니다</p>
+  <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+    <button class="btn-primary" onclick="openDemo()">🎯 라이브 데모 체험</button>
+    <a href="https://console.anthropic.com" target="_blank" style="text-decoration:none"><button class="btn-outline">API 키 발급받기 ↗</button></a>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div style="font-family:'Syne',sans-serif;font-size:18px;font-weight:800;margin-bottom:8px;background:linear-gradient(135deg,#8B5CF6,#22D3EE);-webkit-background-clip:text;-webkit-text-fill-color:transparent">KanaSpace</div>
+  <div>Kanana API Beta 테스트 프로젝트 · Claude (Anthropic) 기반</div>
+</footer>
+
+<!-- DEMO MODAL -->
+<div class="demo-overlay" id="demoOverlay" onclick="closeDemoIfBg(event)">
+  <div class="demo-box">
+    <div class="demo-header">
+      <div class="demo-title">🎯 AI 라이브 데모</div>
+      <button class="demo-close" onclick="closeDemo()">✕</button>
+    </div>
+    <div class="demo-body">
+      <input class="demo-input key-input-demo" type="password" id="demoKey" placeholder="Claude API 키 입력 (sk-ant-...)">
+      <select class="demo-input" id="demoMode" style="margin-bottom:10px">
+        <option value="emotion">🎵 감정 기반 음악 추천</option>
+        <option value="community">👥 커뮤니티 게시글 분석</option>
+        <option value="personalized">👤 개인화 응답</option>
+      </select>
+      <textarea class="demo-input" id="demoInput" rows="3" placeholder="텍스트를 입력하세요..."></textarea>
+      <button class="demo-btn" id="demoRunBtn" onclick="runDemo()">실행하기 →</button>
+      <div class="demo-result" id="demoResult"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+function openDemo() {
+  const k = localStorage.getItem('demo_key');
+  if (k) document.getElementById('demoKey').value = k;
+  document.getElementById('demoOverlay').classList.add('show');
+}
+function closeDemo() { document.getElementById('demoOverlay').classList.remove('show'); }
+function closeDemoIfBg(e) { if (e.target.id==='demoOverlay') closeDemo(); }
+
+async function runDemo() {
+  const key  = document.getElementById('demoKey').value.trim();
+  const mode = document.getElementById('demoMode').value;
+  const text = document.getElementById('demoInput').value.trim();
+  if (!key) { alert('API 키를 입력해주세요!'); return; }
+  if (!text) { alert('텍스트를 입력해주세요!'); return; }
+  localStorage.setItem('demo_key', key);
+
+  const btn = document.getElementById('demoRunBtn');
+  const res = document.getElementById('demoResult');
+  btn.disabled = true; btn.textContent = '처리 중...';
+  res.textContent = ''; res.classList.remove('show');
+
+  const prompts = {
+    emotion: `사용자의 감정 상태: "${text}"\n이 감정에 맞는 음악 3곡을 추천해주세요. 각 곡의 제목, 아티스트, 추천 이유를 간결하게 알려주세요.`,
+    community: `아래 게시글을 분석해주세요:\n"${text}"\n분류, 요약, 감성(긍정/중립/부정), 신고 여부를 알려주세요.`,
+    personalized: `친근하고 개인적인 톤으로 다음에 답해주세요: "${text}"\n마지막에 관련 후속 질문 하나를 제안해주세요.`
+  };
+
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 600,
+        messages: [{ role: 'user', content: prompts[mode] }]
+      })
+    });
+    const data = await r.json();
+    if (data.error) throw new Error(data.error.message);
+    res.textContent = data.content[0].text;
+    res.classList.add('show');
+  } catch(e) {
+    res.textContent = '오류: ' + e.message;
+    res.classList.add('show');
+  }
+  btn.disabled = false; btn.textContent = '실행하기 →';
+}
+</script>
+</body>
+</html>

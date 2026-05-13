@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MoodTune — 감정 기반 음악 추천 AI</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Inter:wght@300;400;500;600&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0A0A0F;--bg2:#13131A;--bg3:#1C1C26;
+  --border:#2A2A3A;--text:#F0EFE8;--muted:#8B8A9E;
+  --purple:#9B5CFF;--cyan:#00E5FF;--amber:#FFB800;
+  --green:#00E496;--pink:#FF6B9D;--red:#FF4D6D;
+  --font-display:'Syne',sans-serif;--font-body:'Inter',sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);min-height:100vh;overflow-x:hidden}
+
+/* Background */
+.bg-orbs{position:fixed;inset:0;pointer-events:none;z-index:0}
+.orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:0.12}
+.orb1{width:400px;height:400px;background:var(--purple);top:-100px;left:-100px}
+.orb2{width:300px;height:300px;background:var(--cyan);bottom:-80px;right:-80px}
+.orb3{width:250px;height:250px;background:var(--pink);top:40%;left:60%}
+
+/* Layout */
+.container{max-width:900px;margin:0 auto;padding:2rem;position:relative;z-index:1}
+
+/* Header */
+header{text-align:center;padding:3rem 0 2rem}
+.logo{font-family:var(--font-display);font-size:42px;font-weight:800;letter-spacing:-1px}
+.logo span{background:linear-gradient(135deg,var(--purple),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.logo-sub{font-size:15px;color:var(--muted);margin-top:8px;font-weight:300}
+
+/* Emotion input card */
+.input-card{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:2rem;margin-bottom:1.5rem}
+.card-title{font-family:var(--font-display);font-size:16px;font-weight:700;margin-bottom:1rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+
+/* Quick emotion buttons */
+.emotion-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:1.5rem}
+.emo-btn{background:var(--bg3);border:1px solid var(--border);border-radius:30px;padding:8px 16px;font-size:13px;color:var(--muted);cursor:pointer;transition:all 0.2s;font-family:var(--font-body)}
+.emo-btn:hover,.emo-btn.active{border-color:var(--purple);color:var(--text);background:rgba(155,92,255,0.15)}
+.emo-btn .icon{margin-right:4px}
+
+/* Text area */
+.emotion-input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px 16px;color:var(--text);font-family:var(--font-body);font-size:14px;resize:none;outline:none;transition:border-color 0.2s;line-height:1.6}
+.emotion-input:focus{border-color:var(--purple)}
+.emotion-input::placeholder{color:var(--muted)}
+
+/* Settings row */
+.settings-row{display:flex;gap:12px;margin-top:1rem;flex-wrap:wrap}
+.select-wrap{flex:1;min-width:140px}
+.select-wrap label{font-size:11px;color:var(--muted);display:block;margin-bottom:4px;font-weight:500}
+select{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:var(--font-body);font-size:13px;outline:none;cursor:pointer;-webkit-appearance:none}
+select option{background:var(--bg2)}
+
+/* Generate button */
+.gen-btn{width:100%;margin-top:1.5rem;padding:14px;background:linear-gradient(135deg,var(--purple),#6B2FE8);border:none;border-radius:12px;color:#fff;font-family:var(--font-display);font-size:15px;font-weight:700;cursor:pointer;letter-spacing:0.5px;transition:all 0.2s;position:relative;overflow:hidden}
+.gen-btn:hover{transform:translateY(-1px);box-shadow:0 8px 30px rgba(155,92,255,0.4)}
+.gen-btn:active{transform:translateY(0)}
+.gen-btn:disabled{opacity:0.6;cursor:not-allowed;transform:none}
+
+/* Loading */
+.loading{display:none;text-align:center;padding:3rem;color:var(--muted)}
+.loading.show{display:block}
+.loading-bars{display:flex;gap:4px;justify-content:center;margin-bottom:1rem}
+.bar{width:4px;height:32px;background:var(--purple);border-radius:2px;animation:bars 1.2s ease-in-out infinite}
+.bar:nth-child(2){animation-delay:0.1s;background:var(--cyan)}
+.bar:nth-child(3){animation-delay:0.2s}
+.bar:nth-child(4){animation-delay:0.3s;background:var(--pink)}
+.bar:nth-child(5){animation-delay:0.4s;background:var(--cyan)}
+@keyframes bars{0%,100%{transform:scaleY(0.4);opacity:0.5}50%{transform:scaleY(1);opacity:1}}
+
+/* Results */
+#results{display:none}
+#results.show{display:block}
+
+/* Emotion analysis */
+.analysis-card{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:1.5rem;margin-bottom:1rem}
+.emotion-tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.etag{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600}
+.etag.primary{background:rgba(155,92,255,0.2);border:1px solid rgba(155,92,255,0.5);color:var(--purple)}
+.etag.secondary{background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.3);color:var(--cyan)}
+
+/* Mood meter */
+.mood-meters{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:1rem}
+.meter-item label{font-size:11px;color:var(--muted);display:flex;justify-content:space-between;margin-bottom:5px}
+.meter-bar{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.meter-fill{height:100%;border-radius:3px;transition:width 1s ease;background:linear-gradient(90deg,var(--purple),var(--cyan))}
+
+/* Recommendations */
+.recs-header{font-family:var(--font-display);font-size:20px;font-weight:800;margin-bottom:1rem}
+.recs-header span{color:var(--purple)}
+.rec-list{display:flex;flex-direction:column;gap:12px}
+.rec-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:1.25rem;display:flex;align-items:center;gap:1rem;transition:all 0.2s;cursor:pointer}
+.rec-card:hover{border-color:var(--purple);transform:translateX(4px)}
+.rec-num{font-family:var(--font-display);font-size:24px;font-weight:800;color:var(--border);min-width:32px}
+.rec-art{width:52px;height:52px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.rec-info{flex:1}
+.rec-title{font-weight:600;font-size:15px;margin-bottom:3px}
+.rec-artist{font-size:12px;color:var(--muted)}
+.rec-meta{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.rec-tag{font-size:10px;padding:2px 8px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--muted)}
+.rec-match{font-size:12px;font-weight:600;color:var(--green)}
+
+/* Playlist CTA */
+.playlist-cta{background:linear-gradient(135deg,rgba(155,92,255,0.1),rgba(0,229,255,0.1));border:1px solid rgba(155,92,255,0.3);border-radius:20px;padding:1.5rem;text-align:center;margin-top:1.5rem}
+.playlist-cta h3{font-family:var(--font-display);font-size:18px;margin-bottom:8px}
+.playlist-cta p{font-size:13px;color:var(--muted);margin-bottom:1rem}
+.cta-btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.cta-btn{padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--purple);background:rgba(155,92,255,0.15);color:var(--purple);transition:all 0.2s;font-family:var(--font-body)}
+.cta-btn:hover{background:var(--purple);color:#fff}
+
+/* Reset btn */
+.reset-btn{display:block;margin:1.5rem auto 0;background:transparent;border:1px solid var(--border);border-radius:10px;padding:10px 24px;color:var(--muted);font-family:var(--font-body);font-size:13px;cursor:pointer;transition:all 0.2s}
+.reset-btn:hover{border-color:var(--text);color:var(--text)}
+
+/* API key notice */
+.api-notice{background:rgba(255,184,0,0.08);border:1px solid rgba(255,184,0,0.3);border-radius:12px;padding:12px 16px;font-size:12px;color:var(--amber);margin-bottom:1rem;line-height:1.6}
+.api-notice strong{font-weight:600}
+
+/* Key input */
+.key-row{display:flex;gap:8px;margin-top:8px}
+.key-input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:monospace;font-size:12px;outline:none}
+.key-input:focus{border-color:var(--amber)}
+.key-save{background:var(--amber);border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;color:#000;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="bg-orbs">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+</div>
+
+<div class="container">
+  <header>
+    <div class="logo">Mood<span>Tune</span></div>
+    <div class="logo-sub">당신의 감정을 음악으로 — AI 기반 맞춤 추천</div>
+  </header>
+
+  <div class="api-notice">
+    <strong>🔑 Claude API 키 필요</strong> — 이 앱은 Claude API를 사용합니다. Anthropic Console에서 키를 발급받아 아래에 입력하세요. 키는 브라우저에만 저장됩니다.<br>
+    <div class="key-row">
+      <input class="key-input" type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." />
+      <button class="key-save" onclick="saveKey()">저장</button>
+    </div>
+  </div>
+
+  <div class="input-card">
+    <div class="card-title">지금 기분이 어때요?</div>
+    <div class="emotion-grid" id="emoGrid">
+      <button class="emo-btn" onclick="selectEmo(this,'행복하고 설레요 🎉')"><span class="icon">🎉</span> 행복</button>
+      <button class="emo-btn" onclick="selectEmo(this,'우울하고 외로워요 😔')"><span class="icon">😔</span> 우울</button>
+      <button class="emo-btn" onclick="selectEmo(this,'신나고 에너지 넘쳐요 🔥')"><span class="icon">🔥</span> 신남</button>
+      <button class="emo-btn" onclick="selectEmo(this,'차분하고 여유로워요 🌿')"><span class="icon">🌿</span> 차분</button>
+      <button class="emo-btn" onclick="selectEmo(this,'슬프고 눈물이 날 것 같아요 😢')"><span class="icon">😢</span> 슬픔</button>
+      <button class="emo-btn" onclick="selectEmo(this,'집중하고 싶어요 📚')"><span class="icon">📚</span> 집중</button>
+      <button class="emo-btn" onclick="selectEmo(this,'낭만적인 기분이에요 💕')"><span class="icon">💕</span> 낭만</button>
+      <button class="emo-btn" onclick="selectEmo(this,'화나고 답답해요 😤')"><span class="icon">😤</span> 분노</button>
+      <button class="emo-btn" onclick="selectEmo(this,'불안하고 긴장돼요 😰')"><span class="icon">😰</span> 불안</button>
+      <button class="emo-btn" onclick="selectEmo(this,'그리움과 향수가 느껴져요 🌙')"><span class="icon">🌙</span> 그리움</button>
+    </div>
+
+    <textarea class="emotion-input" id="emotionText" rows="3" placeholder="지금 감정을 자유롭게 써보세요. 예: '오늘 힘든 하루를 보내고 집에 왔어요. 조용히 쉬고 싶은데 약간 외로운 느낌도 들어요...'"></textarea>
+
+    <div class="settings-row">
+      <div class="select-wrap">
+        <label>선호 장르</label>
+        <select id="genrePref">
+          <option value="any">장르 무관</option>
+          <option value="kpop">K-Pop</option>
+          <option value="pop">팝</option>
+          <option value="indie">인디</option>
+          <option value="hiphop">힙합/R&B</option>
+          <option value="classical">클래식</option>
+          <option value="jazz">재즈</option>
+          <option value="electronic">일렉트로닉</option>
+          <option value="rock">록</option>
+        </select>
+      </div>
+      <div class="select-wrap">
+        <label>언어</label>
+        <select id="langPref">
+          <option value="any">상관없음</option>
+          <option value="korean">한국어</option>
+          <option value="english">영어</option>
+          <option value="japanese">일본어</option>
+        </select>
+      </div>
+      <div class="select-wrap">
+        <label>시대</label>
+        <select id="eraPref">
+          <option value="any">무관</option>
+          <option value="2020s">2020년대</option>
+          <option value="2010s">2010년대</option>
+          <option value="2000s">2000년대</option>
+          <option value="classics">클래식</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="gen-btn" onclick="getRecommendations()" id="genBtn">
+      🎵 감정 분석 후 음악 추천받기
+    </button>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="loading-bars">
+      <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+      <div class="bar"></div><div class="bar"></div>
+    </div>
+    <div id="loadingText">감정을 분석하고 있어요...</div>
+  </div>
+
+  <div id="results">
+    <!-- Emotion Analysis -->
+    <div class="analysis-card" id="analysisCard"></div>
+
+    <!-- Mood Meters -->
+    <div class="analysis-card">
+      <div class="card-title">감정 스펙트럼</div>
+      <div class="mood-meters" id="moodMeters"></div>
+    </div>
+
+    <!-- Recommendations -->
+    <div class="recs-header" id="recsHeader"></div>
+    <div class="rec-list" id="recList"></div>
+
+    <div class="playlist-cta">
+      <h3>🎧 플레이리스트로 저장</h3>
+      <p>이 추천 목록을 저장하고 오늘의 감정을 기록해보세요</p>
+      <div class="cta-btns">
+        <button class="cta-btn" onclick="savePlaylist()">📋 목록 복사</button>
+        <button class="cta-btn" onclick="searchSpotify()">Spotify에서 검색</button>
+        <button class="cta-btn" onclick="searchYoutube()">YouTube에서 검색</button>
+      </div>
+    </div>
+
+    <button class="reset-btn" onclick="resetApp()">↺ 다시 추천받기</button>
+  </div>
+</div>
+
+<script>
+let apiKey = localStorage.getItem('moodtune_key') || '';
+let currentRecs = [];
+let selectedEmoText = '';
+
+function saveKey() {
+  const k = document.getElementById('apiKeyInput').value.trim();
+  if (k) { localStorage.setItem('moodtune_key', k); apiKey = k; alert('API 키가 저장됐어요!'); }
+}
+
+if (apiKey) document.getElementById('apiKeyInput').value = apiKey;
+
+function selectEmo(btn, text) {
+  document.querySelectorAll('.emo-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  selectedEmoText = text;
+  document.getElementById('emotionText').value = text;
+}
+
+async function getRecommendations() {
+  const emotion = document.getElementById('emotionText').value.trim();
+  if (!emotion) { alert('감정을 입력해주세요!'); return; }
+  if (!apiKey) { alert('API 키를 먼저 입력해주세요!'); return; }
+
+  const genre = document.getElementById('genrePref').value;
+  const lang = document.getElementById('langPref').value;
+  const era = document.getElementById('eraPref').value;
+
+  document.getElementById('genBtn').disabled = true;
+  document.getElementById('loading').classList.add('show');
+  document.getElementById('results').style.display = 'none';
+
+  const loadingMsgs = ['감정을 분석하고 있어요...','음악 데이터베이스를 탐색 중...','최적의 곡들을 선별하고 있어요...','플레이리스트를 구성하고 있어요...'];
+  let mi = 0;
+  const lt = setInterval(() => {
+    document.getElementById('loadingText').textContent = loadingMsgs[mi++ % loadingMsgs.length];
+  }, 1200);
+
+  const prompt = `당신은 감정 기반 음악 추천 전문 AI입니다. 사용자의 감정 상태를 분석하고 음악을 추천해주세요.
+
+사용자 감정: "${emotion}"
+선호 장르: ${genre === 'any' ? '무관' : genre}
+언어: ${lang === 'any' ? '무관' : lang}
+시대: ${era === 'any' ? '무관' : era}
+
+다음 JSON 형식으로만 응답하세요. JSON 외 다른 텍스트는 절대 포함하지 마세요:
+{
+  "emotion_summary": "한 문장으로 감정 요약",
+  "emotion_tags": ["주요감정1", "보조감정2", "뉘앙스3"],
+  "mood_scores": {
+    "energy": 0~100,
+    "happiness": 0~100,
+    "melancholy": 0~100,
+    "tension": 0~100
+  },
+  "message": "사용자에게 공감하는 따뜻한 메시지 2~3문장",
+  "recommendations": [
+    {
+      "rank": 1,
+      "title": "곡 제목",
+      "artist": "아티스트",
+      "genre": "장르",
+      "year": "발매년도",
+      "why": "이 곡을 추천하는 이유 (감정과의 연결)",
+      "mood_tags": ["태그1", "태그2"],
+      "emoji": "곡 분위기를 나타내는 이모지",
+      "match_pct": 85
+    }
+  ]
+}
+
+recommendations는 5개 제공하세요. 실제 존재하는 곡들로만 추천하세요.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1500,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    clearInterval(lt);
+    document.getElementById('loading').classList.remove('show');
+    document.getElementById('genBtn').disabled = false;
+
+    if (data.error) { alert('API 오류: ' + data.error.message); return; }
+
+    const text = data.content[0].text;
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('JSON 파싱 실패');
+    const result = JSON.parse(jsonMatch[0]);
+    currentRecs = result.recommendations;
+    renderResults(result);
+  } catch(e) {
+    clearInterval(lt);
+    document.getElementById('loading').classList.remove('show');
+    document.getElementById('genBtn').disabled = false;
+    alert('오류: ' + e.message);
+  }
+}
+
+function renderResults(data) {
+  // Analysis
+  document.getElementById('analysisCard').innerHTML = `
+    <div class="card-title">감정 분석 결과</div>
+    <p style="font-size:15px;line-height:1.7;margin:12px 0">${data.message}</p>
+    <div class="emotion-tags">
+      ${data.emotion_tags.map((t,i) => `<span class="etag ${i===0?'primary':'secondary'}">${t}</span>`).join('')}
+    </div>
+  `;
+
+  // Meters
+  const ms = data.mood_scores;
+  const meters = [
+    {label:'에너지', key:'energy', color:'#9B5CFF'},
+    {label:'행복감', key:'happiness', color:'#00E496'},
+    {label:'우울감', key:'melancholy', color:'#00E5FF'},
+    {label:'긴장도', key:'tension', color:'#FF6B9D'}
+  ];
+  document.getElementById('moodMeters').innerHTML = meters.map(m => `
+    <div class="meter-item">
+      <label>${m.label} <span style="color:${m.color}">${ms[m.key]}%</span></label>
+      <div class="meter-bar"><div class="meter-fill" style="width:${ms[m.key]}%;background:${m.color}"></div></div>
+    </div>
+  `).join('');
+
+  // Header
+  document.getElementById('recsHeader').innerHTML = `<span>🎵</span> 오늘 당신을 위한 음악`;
+
+  // Recs
+  document.getElementById('recList').innerHTML = data.recommendations.map(r => `
+    <div class="rec-card" onclick="playSearch('${r.title} ${r.artist}')">
+      <div class="rec-num">${String(r.rank).padStart(2,'0')}</div>
+      <div class="rec-art" style="background:rgba(155,92,255,0.15)">${r.emoji}</div>
+      <div class="rec-info">
+        <div class="rec-title">${r.title}</div>
+        <div class="rec-artist">${r.artist} · ${r.year} · ${r.genre}</div>
+        <div class="rec-meta">
+          ${r.mood_tags.map(t=>`<span class="rec-tag">${t}</span>`).join('')}
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:6px">${r.why}</div>
+      </div>
+      <div class="rec-match">${r.match_pct}%</div>
+    </div>
+  `).join('');
+
+  const el = document.getElementById('results');
+  el.style.display = 'block';
+  setTimeout(() => el.classList.add('show'), 10);
+}
+
+function playSearch(query) {
+  window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, '_blank');
+}
+
+function savePlaylist() {
+  const list = currentRecs.map((r,i) => `${i+1}. ${r.title} - ${r.artist}`).join('\n');
+  navigator.clipboard.writeText(list).then(() => alert('플레이리스트가 복사됐어요!\n\n' + list));
+}
+
+function searchSpotify() {
+  if(currentRecs.length) window.open(`https://open.spotify.com/search/${encodeURIComponent(currentRecs[0].title + ' ' + currentRecs[0].artist)}`, '_blank');
+}
+
+function searchYoutube() {
+  if(currentRecs.length) playSearch(currentRecs[0].title + ' ' + currentRecs[0].artist);
+}
+
+function resetApp() {
+  document.getElementById('emotionText').value = '';
+  document.querySelectorAll('.emo-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('results').classList.remove('show');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PersonaChat — 맞춤형 AI 응답 시스템</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F8F7F4;--bg2:#FFFFFF;--bg3:#F0EEE9;
+  --border:#E5E2DA;--text:#1A1916;--muted:#7A7870;
+  --accent:#5B4FCF;--accent-light:#EEECfB;
+  --green:#1A7A5E;--green-bg:#E8F5F0;
+  --font:'Plus Jakarta Sans',sans-serif;
+}
+@media(prefers-color-scheme:dark){
+  :root{--bg:#0F0F0D;--bg2:#1A1A17;--bg3:#222220;--border:#2E2E2A;--text:#F0EFE8;--muted:#8A8A7E;--accent-light:#1E1A3E}
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font);height:100vh;display:flex;flex-direction:column}
+
+/* Header */
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 1.5rem;height:56px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.tb-logo{font-weight:700;font-size:17px}
+.tb-logo span{color:var(--accent)}
+.user-badge{display:flex;align-items:center;gap:8px;margin-left:auto;cursor:pointer}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:600}
+.persona-badge{font-size:11px;padding:3px 8px;background:var(--accent-light);color:var(--accent);border-radius:10px;font-weight:500}
+.settings-btn{background:none;border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:12px;color:var(--muted);cursor:pointer;font-family:var(--font)}
+
+/* Main layout */
+.main{display:flex;flex:1;min-height:0}
+.sidebar{width:240px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.sb-section{padding:1rem}
+.sb-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px}
+.profile-card{background:var(--bg3);border-radius:10px;padding:10px}
+.profile-row{display:flex;justify-content:space-between;font-size:12px;padding:3px 0;color:var(--muted)}
+.profile-row span{color:var(--text);font-weight:500}
+.interest-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.int-tag{font-size:10px;padding:2px 7px;background:var(--accent-light);color:var(--accent);border-radius:8px}
+.history-item{padding:8px 10px;border-radius:8px;font-size:12px;color:var(--muted);cursor:pointer;transition:background 0.15s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.history-item:hover{background:var(--bg3)}
+.history-item.active{background:var(--accent-light);color:var(--accent)}
+.new-chat-btn{width:100%;padding:8px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-family:var(--font);font-size:13px;font-weight:500;cursor:pointer;margin-top:8px}
+.new-chat-btn:hover{opacity:0.9}
+.mood-row{display:flex;gap:4px}
+.mood-btn{flex:1;padding:6px 2px;font-size:11px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;cursor:pointer;color:var(--muted);transition:all 0.15s;font-family:var(--font)}
+.mood-btn:hover,.mood-btn.active{background:var(--accent-light);color:var(--accent);border-color:var(--accent)}
+
+/* Chat area */
+.chat-area{flex:1;display:flex;flex-direction:column;min-width:0}
+.messages{flex:1;overflow-y:auto;padding:1.5rem;display:flex;flex-direction:column;gap:1rem}
+.msg{max-width:75%;display:flex;flex-direction:column;gap:4px}
+.msg.user{align-self:flex-end;align-items:flex-end}
+.msg.ai{align-self:flex-start;align-items:flex-start}
+.bubble{padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.6}
+.msg.user .bubble{background:var(--accent);color:#fff;border-bottom-right-radius:4px}
+.msg.ai .bubble{background:var(--bg2);border:1px solid var(--border);color:var(--text);border-bottom-left-radius:4px}
+.msg-meta{font-size:11px;color:var(--muted)}
+.persona-indicator{font-size:11px;color:var(--accent);font-weight:500}
+
+/* Personalization pill */
+.persona-pill{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 8px;background:var(--green-bg);color:var(--green);border-radius:8px;margin-top:4px}
+
+/* Input bar */
+.input-area{padding:1rem 1.5rem;background:var(--bg2);border-top:1px solid var(--border)}
+.input-row{display:flex;gap:8px;align-items:flex-end}
+.chat-input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:10px 14px;color:var(--text);font-family:var(--font);font-size:14px;resize:none;outline:none;max-height:120px;transition:border-color 0.2s}
+.chat-input:focus{border-color:var(--accent)}
+.send-btn{background:var(--accent);border:none;border-radius:10px;width:40px;height:40px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity 0.15s}
+.send-btn:hover{opacity:0.9}
+.send-btn svg{fill:white}
+.input-hints{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.hint-btn{font-size:11px;padding:4px 10px;background:var(--bg);border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--muted);transition:all 0.15s;font-family:var(--font)}
+.hint-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Setup modal */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100}
+.modal{background:var(--bg2);border-radius:16px;padding:2rem;width:380px;max-width:90vw}
+.modal h2{font-size:20px;font-weight:700;margin-bottom:4px}
+.modal p{font-size:13px;color:var(--muted);margin-bottom:1.5rem}
+.form-group{margin-bottom:1rem}
+.form-group label{font-size:12px;font-weight:500;color:var(--muted);display:block;margin-bottom:4px}
+.form-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-family:var(--font);font-size:13px;outline:none}
+.form-input:focus{border-color:var(--accent)}
+.form-input[type=password]{font-family:monospace;font-size:12px}
+.checkbox-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.cb-item{display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;padding:5px 8px;border-radius:6px;border:1px solid var(--border);transition:all 0.15s}
+.cb-item:hover,.cb-item input:checked+span{color:var(--accent)}
+.cb-item input:checked+*{font-weight:500}
+.modal-btn{width:100%;padding:10px;background:var(--accent);border:none;border-radius:10px;color:#fff;font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;margin-top:0.5rem}
+
+/* Typing indicator */
+.typing-dots span{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--muted);margin:0 2px;animation:bounce 1.2s infinite}
+.typing-dots span:nth-child(2){animation-delay:0.2s}
+.typing-dots span:nth-child(3){animation-delay:0.4s}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+</style>
+</head>
+<body>
+
+<!-- Setup Modal -->
+<div class="overlay" id="setupModal">
+  <div class="modal">
+    <h2>👤 프로필 설정</h2>
+    <p>개인화 AI 응답을 위해 간단한 정보를 입력해주세요</p>
+    <div class="form-group">
+      <label>Claude API 키</label>
+      <input class="form-input" type="password" id="setupKey" placeholder="sk-ant-api03-...">
+    </div>
+    <div class="form-group">
+      <label>닉네임</label>
+      <input class="form-input" id="setupName" placeholder="홍길동">
+    </div>
+    <div class="form-group">
+      <label>직업/분야</label>
+      <select class="form-input" id="setupJob">
+        <option value="">선택하세요</option>
+        <option>개발자</option><option>디자이너</option><option>학생</option>
+        <option>마케터</option><option>기획자</option><option>기타</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>관심 분야 (복수 선택)</label>
+      <div class="checkbox-grid" id="interestGrid">
+        <label class="cb-item"><input type="checkbox" value="AI/기술"> <span>🤖 AI/기술</span></label>
+        <label class="cb-item"><input type="checkbox" value="음악"> <span>🎵 음악</span></label>
+        <label class="cb-item"><input type="checkbox" value="게임"> <span>🎮 게임</span></label>
+        <label class="cb-item"><input type="checkbox" value="독서"> <span>📚 독서</span></label>
+        <label class="cb-item"><input type="checkbox" value="여행"> <span>✈️ 여행</span></label>
+        <label class="cb-item"><input type="checkbox" value="요리"> <span>🍳 요리</span></label>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>선호 응답 스타일</label>
+      <select class="form-input" id="setupStyle">
+        <option value="친근한">친근하고 캐주얼하게</option>
+        <option value="전문적인">전문적이고 정확하게</option>
+        <option value="간결한">짧고 핵심만</option>
+        <option value="상세한">자세하고 친절하게</option>
+      </select>
+    </div>
+    <button class="modal-btn" onclick="saveProfile()">시작하기 →</button>
+  </div>
+</div>
+
+<div class="topbar">
+  <div class="tb-logo">Persona<span>Chat</span></div>
+  <div class="persona-badge" id="personaBadge">설정 중...</div>
+  <button class="settings-btn" onclick="showSetup()">⚙ 프로필 수정</button>
+  <div class="user-badge">
+    <div class="avatar" id="userAvatar">?</div>
+    <span style="font-size:13px;font-weight:500" id="userNameDisplay">사용자</span>
+  </div>
+</div>
+
+<div class="main">
+  <div class="sidebar">
+    <div class="sb-section">
+      <div class="sb-title">내 프로필</div>
+      <div class="profile-card" id="profileCard">
+        <div class="profile-row">직업 <span id="jobDisplay">-</span></div>
+        <div class="profile-row">스타일 <span id="styleDisplay">-</span></div>
+        <div class="profile-row">대화 수 <span id="chatCountDisplay">0</span></div>
+        <div class="interest-tags" id="interestTagsDisplay"></div>
+      </div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-title">현재 기분</div>
+      <div class="mood-row">
+        <button class="mood-btn" onclick="setMood(this,'좋음','😊')">😊</button>
+        <button class="mood-btn" onclick="setMood(this,'보통','😐')">😐</button>
+        <button class="mood-btn" onclick="setMood(this,'피곤','😴')">😴</button>
+        <button class="mood-btn" onclick="setMood(this,'바쁨','⚡')">⚡</button>
+      </div>
+    </div>
+    <div class="sb-section" style="flex:1">
+      <div class="sb-title">대화 기록</div>
+      <div id="historyList"></div>
+      <button class="new-chat-btn" onclick="newChat()">+ 새 대화</button>
+    </div>
+  </div>
+
+  <div class="chat-area">
+    <div class="messages" id="messages">
+      <div class="msg ai">
+        <div class="persona-indicator">🤖 PersonaChat AI</div>
+        <div class="bubble">안녕하세요! 프로필을 설정하면 당신에게 맞춤화된 응답을 드릴게요 😊</div>
+      </div>
+    </div>
+    <div class="input-area">
+      <div class="input-hints" id="inputHints"></div>
+      <div class="input-row">
+        <textarea class="chat-input" id="chatInput" rows="1" placeholder="메시지를 입력하세요..." onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="send-btn" onclick="sendMessage()">
+          <svg width="16" height="16" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── 사용자 프로필 ────────────────────────────────────────────────────────────
+let profile = JSON.parse(localStorage.getItem('persona_profile') || 'null');
+let conversations = JSON.parse(localStorage.getItem('persona_convs') || '[]');
+let currentConvId = null;
+let currentMessages = [];
+let currentMood = '보통';
+let chatCount = 0;
+
+// Firebase 설정 (선택사항 - 없으면 localStorage만 사용)
+// const firebaseConfig = { apiKey:"...", authDomain:"...", projectId:"..." };
+// firebase.initializeApp(firebaseConfig);
+// const db = firebase.firestore();
+
+function saveProfile() {
+  const key   = document.getElementById('setupKey').value.trim();
+  const name  = document.getElementById('setupName').value.trim();
+  const job   = document.getElementById('setupJob').value;
+  const style = document.getElementById('setupStyle').value;
+  const interests = [...document.querySelectorAll('#interestGrid input:checked')].map(el => el.value);
+  if (!key || !name) { alert('API 키와 닉네임은 필수입니다!'); return; }
+
+  profile = { key, name, job, style, interests, chatCount: 0 };
+  localStorage.setItem('persona_profile', JSON.stringify(profile));
+  document.getElementById('setupModal').style.display = 'none';
+  updateUI();
+  newChat();
+}
+
+function updateUI() {
+  if (!profile) return;
+  document.getElementById('userAvatar').textContent       = profile.name[0];
+  document.getElementById('userNameDisplay').textContent  = profile.name;
+  document.getElementById('personaBadge').textContent     = `${profile.style} 모드`;
+  document.getElementById('jobDisplay').textContent       = profile.job || '-';
+  document.getElementById('styleDisplay').textContent     = profile.style;
+  document.getElementById('chatCountDisplay').textContent = profile.chatCount || 0;
+  document.getElementById('interestTagsDisplay').innerHTML =
+    (profile.interests||[]).map(i=>`<span class="int-tag">${i}</span>`).join('');
+  // 빠른 힌트
+  const hints = getHints();
+  document.getElementById('inputHints').innerHTML = hints.map(h =>
+    `<button class="hint-btn" onclick="quickSend('${h}')">${h}</button>`
+  ).join('');
+}
+
+function getHints() {
+  const base = ['안녕! 오늘 어때?', '추천해줘', '도움말'];
+  if (profile?.interests?.includes('AI/기술')) return ['최신 AI 트렌드 알려줘', '코드 리뷰 부탁해', '기술 질문있어', ...base];
+  if (profile?.interests?.includes('음악')) return ['노래 추천해줘', '음악 관련 이야기 해줘', ...base];
+  return base;
+}
+
+function setMood(btn, mood, emoji) {
+  document.querySelectorAll('.mood-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  currentMood = mood;
+}
+
+function buildSystemPrompt() {
+  if (!profile) return '친절한 AI 어시스턴트입니다.';
+  const interestStr = profile.interests?.join(', ') || '없음';
+  return `당신은 ${profile.name}님의 개인 맞춤형 AI 어시스턴트입니다.
+
+[사용자 프로필]
+- 이름: ${profile.name}
+- 직업/분야: ${profile.job || '미설정'}
+- 관심 분야: ${interestStr}
+- 현재 기분: ${currentMood}
+- 선호 응답 스타일: ${profile.style}
+
+[응답 지침]
+- 사용자 이름(${profile.name})을 가끔 자연스럽게 불러주세요
+- "${profile.style}" 톤으로 응답하세요
+- 관심 분야(${interestStr})와 연결되는 예시나 비유를 활용하세요
+- 현재 기분이 "${currentMood}"임을 감안하여 적절한 공감을 보여주세요
+- 직업/분야(${profile.job})에 맞는 전문 용어나 관점을 활용하세요
+- 응답 끝에 관련된 후속 질문을 하나씩 제안하세요
+
+이전 대화 맥락을 기억하고 일관성 있게 응답하세요.`;
+}
+
+// ── 채팅 ────────────────────────────────────────────────────────────────────
+function newChat() {
+  currentConvId = Date.now().toString();
+  currentMessages = [];
+  document.getElementById('messages').innerHTML = '';
+  addMessage('ai', `안녕하세요, ${profile?.name||''}님! 오늘 무엇을 도와드릴까요? 😊`, true);
+  updateHistoryList();
+}
+
+function addMessage(role, text, isNew=true) {
+  const el = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  let extra = '';
+  if (role === 'ai' && isNew && profile) {
+    extra = `<div class="persona-pill">✨ ${profile.style} 응답</div>`;
+  }
+  div.innerHTML = `
+    ${role==='ai' ? '<div class="persona-indicator">🤖 AI</div>' : ''}
+    <div class="bubble">${text}</div>
+    ${extra}
+    <div class="msg-meta">${new Date().toLocaleTimeString('ko',{hour:'2-digit',minute:'2-digit'})}</div>
+  `;
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+  if (isNew) {
+    currentMessages.push({ role: role==='user'?'user':'assistant', content: text });
+    saveConversation();
+  }
+}
+
+function addTyping() {
+  const el = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg ai'; div.id = 'typing-indicator';
+  div.innerHTML = `<div class="bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+}
+
+function removeTyping() {
+  document.getElementById('typing-indicator')?.remove();
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  if (!profile) { alert('먼저 프로필을 설정해주세요!'); return; }
+  input.value = ''; input.style.height = '';
+
+  addMessage('user', text);
+  addTyping();
+
+  try {
+    const messages = currentMessages.slice(-20).map(m => ({role:m.role, content:m.content}));
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': profile.key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 800,
+        system: buildSystemPrompt(),
+        messages: messages.slice(0, -1)  // 마지막 user 메시지는 포함됨
+      })
+    });
+    const data = await res.json();
+    removeTyping();
+    if (data.error) throw new Error(data.error.message);
+    const reply = data.content[0].text;
+    addMessage('ai', reply);
+    profile.chatCount = (profile.chatCount||0) + 1;
+    localStorage.setItem('persona_profile', JSON.stringify(profile));
+    document.getElementById('chatCountDisplay').textContent = profile.chatCount;
+  } catch(e) {
+    removeTyping();
+    addMessage('ai', `❌ 오류: ${e.message}`);
+  }
+}
+
+function quickSend(text) {
+  document.getElementById('chatInput').value = text;
+  sendMessage();
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+// ── 히스토리 ─────────────────────────────────────────────────────────────────
+function saveConversation() {
+  const idx = conversations.findIndex(c=>c.id===currentConvId);
+  const conv = { id: currentConvId, preview: currentMessages[0]?.content?.slice(0,40)||'새 대화', messages: currentMessages, ts: Date.now() };
+  if (idx >= 0) conversations[idx] = conv;
+  else conversations.unshift(conv);
+  conversations = conversations.slice(0, 20);
+  localStorage.setItem('persona_convs', JSON.stringify(conversations));
+  updateHistoryList();
+}
+
+function updateHistoryList() {
+  document.getElementById('historyList').innerHTML = conversations.slice(0,8).map(c => `
+    <div class="history-item ${c.id===currentConvId?'active':''}" onclick="loadConv('${c.id}')">${c.preview}...</div>
+  `).join('');
+}
+
+function loadConv(id) {
+  const conv = conversations.find(c=>c.id===id);
+  if (!conv) return;
+  currentConvId = id;
+  currentMessages = conv.messages;
+  document.getElementById('messages').innerHTML = '';
+  conv.messages.forEach(m => addMessage(m.role==='user'?'user':'ai', m.content, false));
+  updateHistoryList();
+}
+
+// ── 초기화 ────────────────────────────────────────────────────────────────────
+function showSetup() { document.getElementById('setupModal').style.display = 'flex'; }
+
+if (profile) {
+  document.getElementById('setupModal').style.display = 'none';
+  if(profile.key) document.getElementById('setupKey').value = profile.key;
+  document.getElementById('setupName').value = profile.name;
+  updateUI();
+  updateHistoryList();
+  if(conversations.length > 0) loadConv(conversations[0].id);
+  else newChat();
+}
+</script>
+</body>
+</html>
